@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallpaper Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+            height: calc(100vh - 40px);
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .controls h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .control-group input, .control-group textarea, .control-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .control-group input:focus, .control-group textarea:focus, .control-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .color-input {
+            height: 50px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .range-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-input {
+            flex: 1;
+        }
+
+        .range-value {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-weight: 600;
+            min-width: 40px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .download-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .preview-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-title {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        #wallpaperCanvas {
+            max-width: 100%;
+            max-height: 70vh;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            object-fit: contain;
+        }
+
+        @media (max-width: 768px) {
+            #wallpaperCanvas {
+                max-height: 60vh;
+                border-radius: 20px;
+            }
+        }
+
+        #wallpaperCanvas:hover {
+            transform: scale(1.02);
+        }
+
+        .dimensions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .dimensions input {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .controls {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h2>🎨 Wallpaper Generator</h2>
+            
+            <div class="control-group">
+                <label>Screen Size</label>
+                <select id="presetDimensions">
+                    <option value="1080x1920">📱 Phone Portrait (1080x1920)</option>
+                    <option value="1920x1080">💻 Desktop (1920x1080)</option>
+                    <option value="1440x2560">📱 Phone QHD (1440x2560)</option>
+                    <option value="828x1792">📱 iPhone 11 (828x1792)</option>
+                    <option value="1170x2532">📱 iPhone 13/14 (1170x2532)</option>
+                    <option value="1080x2340">📱 Android Modern (1080x2340)</option>
+                    <option value="720x1280">📱 Phone HD (720x1280)</option>
+                    <option value="custom">⚙️ Custom Size</option>
+                </select>
+            </div>
+
+            <div class="control-group" id="customDimensions" style="display: none;">
+                <label>Custom Dimensions</label>
+                <div class="dimensions">
+                    <input type="number" id="canvasWidth" value="1080" placeholder="Width">
+                    <input type="number" id="canvasHeight" value="1920" placeholder="Height">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Background Color</label>
+                <input type="color" id="backgroundColor" value="#667eea" class="color-input">
+            </div>
+
+            <div class="control-group">
+                <label>Border Settings</label>
+                <input type="color" id="borderColor" value="#ffffff" class="color-input" style="margin-bottom: 10px;">
+                <div class="range-group">
+                    <input type="range" id="borderWidth" min="0" max="50" value="5" class="range-input">
+                    <span class="range-value" id="borderWidthValue">5px</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Your Text</label>
+                <textarea id="textContent" placeholder="Enter your text here...">My Phone Wallpaper</textarea>
+            </div>
+
+            <div class="control-group">
+                <label>Text Color</label>
+                <input type="color" id="textColor" value="#ffffff" class="color-input">
+            </div>
+
+            <div class="control-group">
+                <label>Font Size</label>
+                <div class="range-group">
+                    <input type="range" id="fontSize" min="20" max="200" value="48" class="range-input">
+                    <span class="range-value" id="fontSizeValue">48px</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Font Family</label>
+                <select id="fontFamily">
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="Times New Roman, serif">Times New Roman</option>
+                    <option value="Helvetica, sans-serif">Helvetica</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                    <option value="Comic Sans MS, cursive">Comic Sans MS</option>
+                    <option value="Impact, sans-serif">Impact</option>
+                    <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Text Position</label>
+                <select id="textPosition">
+                    <option value="center">Center</option>
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+
+            <button class="download-btn" onclick="downloadWallpaper()">
+                📥 Download Wallpaper
+            </button>
+        </div>
+
+        <div class="preview-container">
+            <h3 class="preview-title">Preview</h3>
+            <canvas id="wallpaperCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wallpaperCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Get all control elements
+        const controls = {
+            presetDimensions: document.getElementById('presetDimensions'),
+            width: document.getElementById('canvasWidth'),
+            height: document.getElementById('canvasHeight'),
+            backgroundColor: document.getElementById('backgroundColor'),
+            borderColor: document.getElementById('borderColor'),
+            borderWidth: document.getElementById('borderWidth'),
+            textContent: document.getElementById('textContent'),
+            textColor: document.getElementById('textColor'),
+            fontSize: document.getElementById('fontSize'),
+            fontFamily: document.getElementById('fontFamily'),
+            textPosition: document.getElementById('textPosition')
+        };
+
+        // Handle preset dimensions
+        controls.presetDimensions.addEventListener('change', function() {
+            const customDiv = document.getElementById('customDimensions');
+            
+            if (this.value === 'custom') {
+                customDiv.style.display = 'block';
+            } else {
+                customDiv.style.display = 'none';
+                const [width, height] = this.value.split('x');
+                controls.width.value = width;
+                controls.height.value = height;
+            }
+            generateWallpaper();
+        });
+
+        // Update range value displays
+        controls.borderWidth.addEventListener('input', function() {
+            document.getElementById('borderWidthValue').textContent = this.value + 'px';
+            generateWallpaper();
+        });
+
+        controls.fontSize.addEventListener('input', function() {
+            document.getElementById('fontSizeValue').textContent = this.value + 'px';
+            generateWallpaper();
+        });
+
+        // Add event listeners to all controls
+        Object.values(controls).forEach(control => {
+            control.addEventListener('input', generateWallpaper);
+        });
+
+        function generateWallpaper() {
+            const width = parseInt(controls.width.value) || 1920;
+            const height = parseInt(controls.height.value) || 1080;
+            
+            // Set canvas size
+            canvas.width = width;
+            canvas.height = height;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw background
+            ctx.fillStyle = controls.backgroundColor.value;
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw border
+            const borderWidth = parseInt(controls.borderWidth.value);
+            if (borderWidth > 0) {
+                ctx.strokeStyle = controls.borderColor.value;
+                ctx.lineWidth = borderWidth;
+                ctx.strokeRect(borderWidth/2, borderWidth/2, width - borderWidth, height - borderWidth);
+            }
+
+            // Draw text
+            const text = controls.textContent.value;
+            if (text.trim()) {
+                const fontSize = parseInt(controls.fontSize.value);
+                ctx.font = `${fontSize}px ${controls.fontFamily.value}`;
+                ctx.fillStyle = controls.textColor.value;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Calculate text position
+                let textX = width / 2;
+                let textY = height / 2;
+
+                switch (controls.textPosition.value) {
+                    case 'top':
+                        textY = height * 0.2;
+                        break;
+                    case 'bottom':
+                        textY = height * 0.8;
+                        break;
+                    case 'left':
+                        textX = width * 0.2;
+                        ctx.textAlign = 'left';
+                        break;
+                    case 'right':
+                        textX = width * 0.8;
+                        ctx.textAlign = 'right';
+                        break;
+                    case 'center':
+                    default:
+                        textX = width / 2;
+                        textY = height / 2;
+                        break;
+                }
+
+                // Handle multi-line text
+                const lines = text.split('\n');
+                const lineHeight = fontSize * 1.2;
+                const totalTextHeight = lines.length * lineHeight;
+                
+                lines.forEach((line, index) => {
+                    const lineY = textY - (totalTextHeight / 2) + (index * lineHeight) + (fontSize / 2);
+                    ctx.fillText(line, textX, lineY);
+                });
+            }
+        }
+
+        function downloadWallpaper() {
+            const link = document.createElement('a');
+            link.download = 'custom-wallpaper.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Generate initial wallpaper
+        generateWallpaper();
+    </script>
+</body>
+</html>
